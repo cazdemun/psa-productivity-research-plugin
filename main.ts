@@ -32,7 +32,7 @@ export default class MyPlugin extends Plugin {
       id: 'create-file',
       name: 'Create File',
       editorCheckCallback: (checking: boolean, editor) => {
-        let selectedText = editor.getSelection();
+        const selectedText = editor.getSelection();
         if (selectedText.length === 0) {
           if (!checking) {
             new Notice('No text selected.');
