@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 export default class MyPlugin extends Plugin {
   settings: MyPluginSettings;
   private embeddingEnabled = true;
+  private tasksChecked = true;
 
   async onload() {
     await this.loadSettings();
@@ -29,6 +30,36 @@ export default class MyPlugin extends Plugin {
     const statusBarItemEl = this.addStatusBarItem();
     statusBarItemEl.setText('Status Bar Text');
 
+    this.addCommand({
+      id: 'toggle-tasks',
+      name: 'Toggle All Tasks',
+      editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {
+        if (checking) {
+          // This command is applicable to markdown views only
+          return view.getViewType() === 'markdown';
+        }
+
+        // Get the current document's lines
+        const lines = editor.getValue().split('\n');
+
+        // Go through each line
+        for (let i = 0; i < lines.length; i++) {
+          // Check if the line matches the pattern
+          if (lines[i].match(/^\s*- \[[x ]\] .*/)) {
+            // Modify the line based on the global toggle state
+            lines[i] = lines[i].replace(/(- \[)([x ])(\] .*)/, (match, prefix, checked, suffix) => {
+              return `${prefix}${this.tasksChecked ? ' ' : 'x'}${suffix}`;
+            });
+          }
+        }
+
+        // Update the document with the modified lines
+        editor.setValue(lines.join('\n'));
+
+        // Toggle the global state
+        this.tasksChecked = !this.tasksChecked;
+      }
+    });
 
     this.addCommand({
       id: 'toggle-embedding',
