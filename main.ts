@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 export default class MyPlugin extends Plugin {
   settings: MyPluginSettings;
+  private embeddingEnabled = true;
 
   async onload() {
     await this.loadSettings();
@@ -27,6 +28,38 @@ export default class MyPlugin extends Plugin {
     // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
     const statusBarItemEl = this.addStatusBarItem();
     statusBarItemEl.setText('Status Bar Text');
+
+
+    this.addCommand({
+      id: 'toggle-embedding',
+      name: 'Toggle Embedding Notes',
+      editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {
+        if (checking) {
+          // This command is applicable to markdown views only
+          return view.getViewType() === 'markdown';
+        }
+
+        // Get the current document's lines
+        const lines = editor.getValue().split('\n');
+
+        // Go through each line
+        for (let i = 0; i < lines.length; i++) {
+          // Check if the line matches the pattern
+          if (lines[i].match(/- \[[x ]\] !?\[\[.*\]\]/)) {
+            // Modify the line based on the global toggle state
+            lines[i] = lines[i].replace(/- \[([x ])\] (!)?\[\[(.*)\]\]/, (match, checked, exclamation, link) => {
+              return `- [${checked}] ${this.embeddingEnabled ? '!' : ''}[[${link}]]`;
+            });
+          }
+        }
+
+        // Update the document with the modified lines
+        editor.setValue(lines.join('\n'));
+
+        // Toggle the global state
+        this.embeddingEnabled = !this.embeddingEnabled;
+      }
+    });
 
     this.addCommand({
       id: 'create-file',
